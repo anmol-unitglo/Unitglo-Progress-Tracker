@@ -1,5 +1,5 @@
 import { PrismaClient, TaskStatus, TestStatus, TestResult } from "@prisma/client";
-import { getNow, calculateOverdue } from "@/utils/date";
+import { getNow, calculateOverdue, getISTDate, startOfDayIST, endOfDayIST } from "@/utils/date";
 
 const prisma = new PrismaClient();
 
@@ -28,17 +28,14 @@ export async function getDashboardSummary() {
     select: { expectedDelivery: true, status: true, deliveryDelay: true, startDelay: true }
   });
 
-  const now = getNow();
+  const now = getISTDate();
   let overdueTasks = 0;
   
-  // Tasks due today/soon
-  const todayStart = new Date(now);
-  todayStart.setHours(0, 0, 0, 0);
-  const todayEnd = new Date(now);
-  todayEnd.setHours(23, 59, 59, 999);
+  // Tasks due today/soon in IST
+  const todayStart = startOfDayIST(now);
+  const todayEnd = endOfDayIST(now);
   
-  const soonEnd = new Date(now);
-  soonEnd.setDate(now.getDate() + 3);
+  const soonEnd = endOfDayIST(new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000));
 
   let dueToday = 0;
   let dueSoon = 0;

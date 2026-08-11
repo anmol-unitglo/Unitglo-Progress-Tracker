@@ -158,6 +158,7 @@ export async function startTaskTesting(testerId: number, taskId: number) {
 export async function passTaskTesting(testerId: number, taskId: number, remarks?: string) {
   const task = await prisma.task.findUnique({ where: { id: taskId } });
   if (!task || task.status !== TaskStatus.TESTING) throw new Error('Invalid status transition');
+  if (task.testerId !== testerId) throw new Error('Unauthorized: Not your task');
 
   const actualCompletion = new Date();
   const deliveryDelay = calculateDeliveryDelay(task.expectedDelivery!, actualCompletion);
@@ -193,6 +194,7 @@ export async function passTaskTesting(testerId: number, taskId: number, remarks?
 export async function failTaskTestingAndCreateDefect(testerId: number, taskId: number, defectData: any) {
   const task = await prisma.task.findUnique({ where: { id: taskId } });
   if (!task || task.status !== TaskStatus.TESTING) throw new Error('Invalid status transition');
+  if (task.testerId !== testerId) throw new Error('Unauthorized: Not your task');
 
   await prisma.$transaction(async (tx) => {
     await tx.taskTesting.create({
@@ -232,6 +234,7 @@ export async function failTaskTestingAndCreateDefect(testerId: number, taskId: n
 export async function recordRetest(testerId: number, taskId: number, result: TestResult, remarks?: string) {
   const task = await prisma.task.findUnique({ where: { id: taskId } });
   if (!task || task.status !== TaskStatus.TESTING) throw new Error('Invalid status transition for retest');
+  if (task.testerId !== testerId) throw new Error('Unauthorized: Not your task');
 
   await prisma.$transaction(async (tx) => {
     await tx.taskRetest.create({

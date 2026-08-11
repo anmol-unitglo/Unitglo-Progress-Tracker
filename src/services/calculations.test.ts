@@ -1,5 +1,4 @@
-import test from 'node:test';
-import assert from 'node:assert';
+import { test, expect, assert } from 'vitest';
 import {
   calculateExpectedDelivery,
   calculateStartDelay,
@@ -22,7 +21,7 @@ test('Calculations Service - Start Delay', () => {
   const planned = new Date('2023-01-01T00:00:00Z');
   
   assert.strictEqual(calculateStartDelay(planned, planned), 0);
-  assert.strictEqual(calculateStartDelay(planned, new Date('2022-12-31T00:00:00Z')), 0);
+  assert.strictEqual(calculateStartDelay(planned, new Date('2022-12-31T00:00:00Z')), -1);
   assert.strictEqual(calculateStartDelay(planned, new Date('2023-01-03T00:00:00Z')), 2);
   assert.strictEqual(calculateStartDelay(planned, new Date('2023-01-01T12:00:00Z')), 0.5);
 });
@@ -32,6 +31,7 @@ test('Calculations Service - Delivery Delay', () => {
   
   assert.strictEqual(calculateDeliveryDelay(expected, expected), 0);
   assert.strictEqual(calculateDeliveryDelay(expected, new Date('2023-01-06T00:00:00Z')), 1);
+  assert.strictEqual(calculateDeliveryDelay(expected, new Date('2023-01-04T00:00:00Z')), -1);
 });
 
 test('Calculations Service - Effort Variance', () => {

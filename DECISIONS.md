@@ -1,34 +1,32 @@
-# Architecture & Business Logic Decisions
+# Architecture and Decision Log
 
-## 1. Authentication & State
-- **Decision:** Use `next-auth` Credentials provider for MVP.
-- **Reason:** Fast to implement without relying on external OAuth providers.
-- **Security:** Roles are extracted from the JWT session on the server. Middlewares block page access; Server Actions validate roles before interacting with DB.
+This document records the architectural and business decisions made during the development of DevTrack.
 
-## 2. Server Actions for Mutations
-- **Decision:** Use Next.js Server Actions (`src/app/actions`) instead of standard API routes for forms.
-- **Reason:** Streamlines development for MVP, ensures fast form processing with built-in cache revalidation (`revalidatePath`), and removes need for complex client-side API fetching state.
+## 2026-08-11: V1.0 Hardening - Dashboard Aggregation Performance
+**Decision:** We will preserve the current `dashboardService.ts` aggregation architecture (in-memory filtering after raw row fetching).
+**Why it was required:** The current architecture uses `findMany` and processes metrics in memory. While `_count`, `_avg`, and `groupBy` via Prisma/SQL would be more performant for large datasets, the current MVP volume is small.
+**Alternatives considered:** Rewriting `dashboardService.ts` to use Prisma `groupBy` and native SQL aggregation.
+**Why chosen:** The existing logic accurately models complex cross-object delays and boundary edge-cases that are difficult to write in Prisma aggregations natively in one step. Preservation of exact business logic was prioritized over premature optimization.
+**Impact:** Safe, risk-free release.
+**Future implications:** Once task counts exceed ~50,000, this service should be refactored to offload aggregation to SQL to prevent NodeJS memory bottlenecks.
 
-## 3. Strict Server-Side Ownership
-- **Decision:** Developer IDs are retrieved from `getServerSession()` during task creation and updates. They are NEVER accepted from client forms.
-- **Reason:** Prevents Developer A from updating Developer B's tasks or manipulating history.
+## 2026-08-11: V1.0 Hardening - UTC Storage + IST Business Boundaries
+**Decision:** Keep database storage in UTC, but enforce Asia/Kolkata (IST) for business boundaries in the service layer using `date-fns-tz`.
+**Why it was required:** The Vercel edge runtime defaults to UTC. We noticed timezone boundary issues where tasks logged at 11:00 PM IST were calculated as the previous day or next day because UTC time was crossed.
+**Alternatives considered:** Shifting the time manually before saving to the database.
+**Why chosen:** Manual shifting creates corrupt database timestamps. Standard UTC storage ensures data portability. Business rules (like overdue checks and start of day) must be evaluated in IST on the fly.
+**Impact:** Timestamps remain UTC in the DB. Overdue checks and Dashboard due-today checks now correctly use IST boundaries.
 
-## 4. Centralized Calculation Service
-- **Decision:** All metric calculations (`Delivery Delay`, `Start Delay`, `Effort Variance`, etc.) are housed in `src/services/calculations.ts`.
-- **Reason:** Prevents UI calculation bugs. When a Task passes testing, the server action automatically determines the Delivery Delay using the pure functions in the calculation service.
+## 2026-08-11: V1.0 Hardening - Password Change Security Model
+**Decision:** Only allow password changes by fetching the authenticated user's ID securely from `getServerSession`.
+**Why it was required:** To prevent IDOR (Insecure Direct Object Reference) vulnerabilities where a user could change another user's password.
+**Alternatives considered:** Accepting `userId` from the client form.
+**Why chosen:** Security best practices mandate never trusting client-provided identifiers for sensitive actions.
+**Impact:** Password changes are secure and explicitly bound to the current active session.
 
-## 5. UI Architecture
-- **Decision:** Monolithic dashboard architecture using TailwindCSS and Lucide Icons.
-- **Reason:** Requires minimal components and gives a SaaS feel out of the box while remaining easily manageable by a single developer.
-
-## 6. Timezone Handling (ADR)
-- **Decision:** Centralize date operations in `src/utils/date.ts` using `date-fns` and `date-fns-tz`.
-- **Reason:** The business logic explicitly requires `Asia/Kolkata` evaluation for dates, especially regarding overdue status and display text. Native JS Dates evaluate timezone based on the underlying server OS, which causes drift in production.
-
-## 7. Shared Dashboard Aggregations (ADR)
-- **Decision:** Both PM and CEO dashboards invoke identically mapped service functions in `src/services/dashboardService.ts`.
-- **Reason:** Prevents identical metric categories (e.g. "On-Time Completion Rate") from drifting apart due to separate Prisma query structures.
-
-## 8. Dynamic Dashboard Developer Rendering (ADR)
-- **Decision:** Hardcoded names are strictly banned. `getDynamicDeveloperPerformance()` queries `where: { role: 'DEVELOPER' }` and joins their tasks to compute averages and sums entirely dynamically.
-- **Reason:** Allows the system to scale smoothly without manual UI intervention when developers join or leave the project team.
+## 2026-08-11: V1.0 Hardening - Tester IDOR Protection
+**Decision:** Enforce that a task can only be passed, failed, or retested by the Tester explicitly assigned to it (`task.testerId === session.user.id`).
+**Why it was required:** A tester could manipulate URL IDs to pass or fail tasks they were not actively assigned to test.
+**Alternatives considered:** Relying only on UI hiding.
+**Why chosen:** Server-side identity enforcement is the only secure method.
+**Impact:** `taskService.ts` tester actions now include strict `testerId` boundary checks.

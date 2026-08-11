@@ -1,35 +1,53 @@
-import { format, differenceInDays } from "date-fns";
-import { formatInTimeZone, toZonedTime } from "date-fns-tz";
+import { formatInTimeZone, toDate, toZonedTime } from 'date-fns-tz';
+import { differenceInDays } from 'date-fns';
 
-const DEFAULT_TIMEZONE = "Asia/Kolkata";
+export const IST_TIMEZONE = 'Asia/Kolkata';
 
-/**
- * Returns the current date/time without shifting the underlying JS Date,
- * but can be used for explicit timezone comparisons if needed.
- */
+// Backward compatibility
 export function getNow(): Date {
   return new Date();
 }
 
-/**
- * Formats a given date consistently in the configured timezone.
- */
 export function formatInIST(date: Date | string, formatString: string = "MMM d, yyyy h:mm a"): string {
   if (!date) return "-";
-  return formatInTimeZone(new Date(date), DEFAULT_TIMEZONE, formatString);
+  return formatInTimeZone(new Date(date), IST_TIMEZONE, formatString);
 }
 
-/**
- * Calculates current overdue days if the expected delivery is past the current time.
- * If expectedDelivery is in the future, returns 0.
- * If expectedDelivery is null, returns null.
- */
+// Get current date/time in IST for business logic calculations
+export function getISTDate(): Date {
+  return new Date();
+}
+
+export function formatIST(date: Date, formatStr: string): string {
+  return formatInTimeZone(date, IST_TIMEZONE, formatStr);
+}
+
+// Convert a UTC date to the start of the day in IST (00:00:00 IST),
+// but return it as a Date object (which may log differently in UTC, but represents IST midnight).
+export function startOfDayIST(date: Date | string | number): Date {
+  const d = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
+  const dateString = formatInTimeZone(d, IST_TIMEZONE, 'yyyy-MM-dd');
+  return toDate(`${dateString}T00:00:00.000`, { timeZone: IST_TIMEZONE });
+}
+
+export function endOfDayIST(date: Date | string | number): Date {
+  const d = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
+  const dateString = formatInTimeZone(d, IST_TIMEZONE, 'yyyy-MM-dd');
+  return toDate(`${dateString}T23:59:59.999`, { timeZone: IST_TIMEZONE });
+}
+
+export function isPastIST(date: Date): boolean {
+  const nowISTString = formatInTimeZone(new Date(), IST_TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+  const nowIST = new Date(nowISTString);
+  return date < nowIST;
+}
+
 export function calculateOverdue(expectedDelivery: Date | null): number | null {
   if (!expectedDelivery) return null;
-  const now = getNow();
+  const now = new Date();
   if (now > expectedDelivery) {
-    const zonedNow = toZonedTime(now, DEFAULT_TIMEZONE);
-    const zonedExpected = toZonedTime(expectedDelivery, DEFAULT_TIMEZONE);
+    const zonedNow = toZonedTime(now, IST_TIMEZONE);
+    const zonedExpected = toZonedTime(expectedDelivery, IST_TIMEZONE);
     return differenceInDays(zonedNow, zonedExpected);
   }
   return 0;
