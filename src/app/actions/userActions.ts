@@ -77,3 +77,85 @@ export async function actionChangePassword(prevState: any, formData: FormData) {
     return { error: "An unexpected error occurred while changing password." };
   }
 }
+
+export async function actionCreateUser(prevState: any, formData: FormData) {
+  const session = await getServerSession(authOptions);
+  
+  if (!session || !session.user || !session.user.id || session.user.role !== "CEO") {
+    return { error: "Forbidden. Only CEO can create users." };
+  }
+
+  const ceoId = parseInt(session.user.id);
+  
+  const name = formData.get("name") as string;
+  const rawEmail = formData.get("email") as string;
+  const role = formData.get("role") as any;
+  const password = formData.get("password") as string;
+  const confirmPassword = formData.get("confirmPassword") as string;
+
+  if (!name || !rawEmail || !role || !password || !confirmPassword) {
+    return { error: "All fields are required." };
+  }
+
+  const email = rawEmail.toLowerCase().trim();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return { error: "Invalid email format." };
+  }
+
+  if (password !== confirmPassword) {
+    return { error: "Passwords do not match." };
+  }
+
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters long." };
+  }
+
+  if (!["PM", "DEVELOPER", "TESTER"].includes(role)) {
+    return { error: "Invalid role selected." };
+  }
+
+  try {
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      return { error: "Email already in use." };
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name,
+          email,
+          role,
+          password: passwordHash,
+        },
+      });
+
+      await tx.activityLog.create({
+        data: {
+          userId: ceoId,
+          action: "USER_CREATED",
+          entityType: "USER",
+          entityId: newUser.id,
+          metadata: JSON.stringify({ 
+            createdUserId: newUser.id,
+            createdUserEmail: newUser.email,
+            createdUserRole: newUser.role,
+            creatorId: ceoId
+          })
+        }
+      });
+    });
+
+    return { success: true, message: "User created successfully." };
+
+  } catch (error) {
+    console.error("User creation error:", error);
+    return { error: "An unexpected error occurred while creating user." };
+  }
+}

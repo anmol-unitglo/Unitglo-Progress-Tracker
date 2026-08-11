@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
-import { LogOut, User, Settings } from "lucide-react";
+import { LogOut, User, Settings, Users } from "lucide-react";
 
 export default function Navigation() {
   const { data: session } = useSession();
@@ -28,6 +28,17 @@ export default function Navigation() {
               <span className="text-xs font-semibold uppercase text-blue-600">{session.user?.role}</span>
             </div>
             
+            {session.user?.role === "CEO" && (
+              <Link
+                href="/ceo/users"
+                className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors font-medium flex items-center gap-1"
+                title="Manage Users"
+              >
+                <Users size={20} />
+                <span className="hidden sm:inline">Users</span>
+              </Link>
+            )}
+
             <Link
               href="/settings"
               className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
