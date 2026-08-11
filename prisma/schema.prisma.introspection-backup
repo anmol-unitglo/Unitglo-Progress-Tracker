@@ -1,0 +1,292 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model activitylog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?
+  action     String
+  entityType String
+  entityId   Int
+  taskId     Int?
+  metadata   String?  @db.Text
+  createdAt  DateTime @default(now())
+  task       task?    @relation(fields: [taskId], references: [id], map: "ActivityLog_taskId_fkey")
+  user       user?    @relation(fields: [userId], references: [id], map: "ActivityLog_userId_fkey")
+
+  @@index([taskId], map: "ActivityLog_taskId_fkey")
+  @@index([userId], map: "ActivityLog_userId_fkey")
+}
+
+model defect {
+  id              Int             @id @default(autoincrement())
+  taskId          Int
+  description     String          @db.Text
+  severity        defect_severity @default(MEDIUM)
+  status          defect_status   @default(OPEN)
+  resolutionNotes String?         @db.Text
+  createdById     Int
+  createdAt       DateTime        @default(now())
+  resolvedAt      DateTime?
+  user            user            @relation(fields: [createdById], references: [id], map: "Defect_createdById_fkey")
+  task            task            @relation(fields: [taskId], references: [id], map: "Defect_taskId_fkey")
+
+  @@index([createdById], map: "Defect_createdById_fkey")
+  @@index([taskId], map: "Defect_taskId_fkey")
+}
+
+model project {
+  id              Int              @id @default(autoincrement())
+  code            String           @unique(map: "Project_code_key")
+  name            String
+  description     String?          @db.Text
+  startDate       DateTime?
+  expectedEndDate DateTime?
+  status          project_status   @default(PLANNING)
+  priority        project_priority @default(MEDIUM)
+  createdById     Int
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime
+  user            user             @relation(fields: [createdById], references: [id], map: "Project_createdById_fkey")
+  projectmember   projectmember[]
+  task            task[]
+
+  @@index([createdById], map: "Project_createdById_fkey")
+}
+
+model projectmember {
+  id        Int                @id @default(autoincrement())
+  projectId Int
+  userId    Int
+  role      projectmember_role
+  createdAt DateTime           @default(now())
+  project   project            @relation(fields: [projectId], references: [id], map: "ProjectMember_projectId_fkey")
+  user      user               @relation(fields: [userId], references: [id], map: "ProjectMember_userId_fkey")
+
+  @@unique([projectId, userId], map: "ProjectMember_projectId_userId_key")
+  @@index([userId], map: "ProjectMember_userId_fkey")
+}
+
+model task {
+  id                           Int                 @id @default(autoincrement())
+  projectId                    Int
+  module                       String?
+  title                        String
+  description                  String?             @db.Text
+  priority                     task_priority       @default(MEDIUM)
+  assignedById                 Int
+  developerId                  Int
+  testerId                     Int?
+  plannedStart                 DateTime?
+  deadline                     DateTime?
+  commitment                   Float?
+  commitmentUnit               task_commitmentUnit @default(HOURS)
+  actualStart                  DateTime?
+  actualCompletion             DateTime?
+  actualEffort                 Float?              @default(0)
+  progress                     Int                 @default(0)
+  status                       task_status         @default(NOT_STARTED)
+  dailyRemarks                 String?             @db.Text
+  expectedDelivery             DateTime?
+  startDelay                   Float?
+  deliveryDelay                Float?
+  effortVariance               Float?
+  estimationAccuracy           Float?
+  testingStatus                task_testingStatus  @default(NOT_STARTED)
+  testResult                   task_testResult?
+  defectCount                  Int                 @default(0)
+  retestCount                  Int                 @default(0)
+  reworkCount                  Int                 @default(0)
+  createdAt                    DateTime            @default(now())
+  updatedAt                    DateTime
+  activitylog                  activitylog[]
+  defect                       defect[]
+  user_task_assignedByIdTouser user                @relation("task_assignedByIdTouser", fields: [assignedById], references: [id], map: "Task_assignedById_fkey")
+  user_task_developerIdTouser  user                @relation("task_developerIdTouser", fields: [developerId], references: [id], map: "Task_developerId_fkey")
+  project                      project             @relation(fields: [projectId], references: [id], map: "Task_projectId_fkey")
+  user_task_testerIdTouser     user?               @relation("task_testerIdTouser", fields: [testerId], references: [id], map: "Task_testerId_fkey")
+  taskretest                   taskretest[]
+  tasktesting                  tasktesting[]
+  taskupdate                   taskupdate[]
+
+  @@index([assignedById], map: "Task_assignedById_fkey")
+  @@index([developerId], map: "Task_developerId_fkey")
+  @@index([projectId], map: "Task_projectId_fkey")
+  @@index([testerId], map: "Task_testerId_fkey")
+}
+
+model taskretest {
+  id         Int               @id @default(autoincrement())
+  taskId     Int
+  testerId   Int
+  retestDate DateTime          @default(now())
+  result     taskretest_result
+  remarks    String?           @db.Text
+  task       task              @relation(fields: [taskId], references: [id], map: "TaskRetest_taskId_fkey")
+  user       user              @relation(fields: [testerId], references: [id], map: "TaskRetest_testerId_fkey")
+
+  @@index([taskId], map: "TaskRetest_taskId_fkey")
+  @@index([testerId], map: "TaskRetest_testerId_fkey")
+}
+
+model tasktesting {
+  id            Int                       @id @default(autoincrement())
+  taskId        Int
+  testerId      Int
+  testingStatus tasktesting_testingStatus
+  testResult    tasktesting_testResult?
+  remarks       String?                   @db.Text
+  createdAt     DateTime                  @default(now())
+  task          task                      @relation(fields: [taskId], references: [id], map: "TaskTesting_taskId_fkey")
+  user          user                      @relation(fields: [testerId], references: [id], map: "TaskTesting_testerId_fkey")
+
+  @@index([taskId], map: "TaskTesting_taskId_fkey")
+  @@index([testerId], map: "TaskTesting_testerId_fkey")
+}
+
+model taskupdate {
+  id           Int               @id @default(autoincrement())
+  taskId       Int
+  progress     Int
+  status       taskupdate_status
+  actualEffort Float?
+  remarks      String?           @db.Text
+  updatedById  Int
+  createdAt    DateTime          @default(now())
+  task         task              @relation(fields: [taskId], references: [id], map: "TaskUpdate_taskId_fkey")
+  user         user              @relation(fields: [updatedById], references: [id], map: "TaskUpdate_updatedById_fkey")
+
+  @@index([taskId], map: "TaskUpdate_taskId_fkey")
+  @@index([updatedById], map: "TaskUpdate_updatedById_fkey")
+}
+
+model user {
+  id                           Int             @id @default(autoincrement())
+  email                        String          @unique(map: "User_email_key")
+  password                     String
+  name                         String
+  role                         user_role       @default(DEVELOPER)
+  createdAt                    DateTime        @default(now())
+  updatedAt                    DateTime
+  activitylog                  activitylog[]
+  defect                       defect[]
+  project                      project[]
+  projectmember                projectmember[]
+  task_task_assignedByIdTouser task[]          @relation("task_assignedByIdTouser")
+  task_task_developerIdTouser  task[]          @relation("task_developerIdTouser")
+  task_task_testerIdTouser     task[]          @relation("task_testerIdTouser")
+  taskretest                   taskretest[]
+  tasktesting                  tasktesting[]
+  taskupdate                   taskupdate[]
+}
+
+enum defect_severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum projectmember_role {
+  CEO
+  PM
+  DEVELOPER
+  TESTER
+}
+
+enum tasktesting_testingStatus {
+  NOT_STARTED
+  TESTING
+  FAILED
+  RETEST
+  PASSED
+}
+
+enum taskupdate_status {
+  NOT_STARTED
+  IN_PROGRESS
+  READY_FOR_TESTING
+  TESTING
+  REWORK_REQUIRED
+  COMPLETED
+  BLOCKED
+}
+
+enum defect_status {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum taskretest_result {
+  PASS
+  FAIL
+}
+
+enum tasktesting_testResult {
+  PASS
+  FAIL
+}
+
+enum user_role {
+  CEO
+  PM
+  DEVELOPER
+  TESTER
+}
+
+enum task_priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum project_status {
+  PLANNING
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum project_priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum task_commitmentUnit {
+  HOURS
+  DAYS
+}
+
+enum task_status {
+  NOT_STARTED
+  IN_PROGRESS
+  READY_FOR_TESTING
+  TESTING
+  REWORK_REQUIRED
+  COMPLETED
+  BLOCKED
+}
+
+enum task_testingStatus {
+  NOT_STARTED
+  TESTING
+  FAILED
+  RETEST
+  PASSED
+}
+
+enum task_testResult {
+  PASS
+  FAIL
+}
