@@ -41,7 +41,7 @@ export default async function PMTaskDetailPage({ params }: { params: { id: strin
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">#{task.id} - {task.title}</h1>
-                <p className="text-gray-500">{task.project.code} • Dev: {task.developer.name} • Tester: {task.tester?.name || "Unassigned"}</p>
+                <p className="text-gray-500">{task.project.code} — {task.project.name} • Dev: {task.developer.name} • Tester: {task.tester?.name || "Unassigned"}</p>
               </div>
               <div className="flex items-center gap-3">
                 <PMTaskActionsMenu task={task} />

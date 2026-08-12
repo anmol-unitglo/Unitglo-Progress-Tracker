@@ -1,43 +1,43 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../api/auth/[...nextauth]/route";
 import { PrismaClient, Priority } from "@prisma/client";
-import { actionCreateTask } from "../../../actions/taskActions";
+import { actionCreatePMTask } from "../../../actions/taskActions";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 const prisma = new PrismaClient();
 
-export default async function NewTaskPage() {
+export default async function PMNewTaskPage() {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "DEVELOPER") return null;
+  if (!session || session.user.role !== "PM") return null;
 
-  // Fetch active projects where developer is a member
+  // Fetch active projects that the PM manages
   const projects = await prisma.project.findMany({
     where: { 
       status: "ACTIVE",
       members: {
         some: {
           userId: parseInt(session.user.id),
-          role: "DEVELOPER"
+          role: "PM"
         }
       }
     }
   });
 
-  const pms = await prisma.user.findMany({
-    where: { role: "PM" }
+  const developers = await prisma.user.findMany({
+    where: { role: "DEVELOPER" }
   });
 
   return (
     <div className="p-8 max-w-3xl mx-auto space-y-6">
-      <Link href="/developer/dashboard" className="text-gray-500 hover:text-gray-800 flex items-center gap-2 w-fit">
-        <ArrowLeft size={16} /> Back to Dashboard
+      <Link href="/pm/tasks" className="text-gray-500 hover:text-gray-800 flex items-center gap-2 w-fit">
+        <ArrowLeft size={16} /> Back to Tasks
       </Link>
       
       <div className="bg-white p-6 rounded-xl shadow border border-gray-100">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Create New Task</h1>
         
-        <form action={actionCreateTask} className="space-y-6">
+        <form action={actionCreatePMTask} className="space-y-6">
           <div className="grid grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Project</label>
@@ -50,11 +50,11 @@ export default async function NewTaskPage() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Assigned By (PM)</label>
-              <select name="assignedById" required className="w-full px-3 py-2 border border-gray-300 rounded-md">
-                <option value="">Select PM</option>
-                {pms.map(pm => (
-                  <option key={pm.id} value={pm.id}>{pm.name}</option>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Developer</label>
+              <select name="developerId" required className="w-full px-3 py-2 border border-gray-300 rounded-md">
+                <option value="">Select Developer</option>
+                {developers.map(dev => (
+                  <option key={dev.id} value={dev.id}>{dev.name}</option>
                 ))}
               </select>
             </div>
@@ -109,7 +109,7 @@ export default async function NewTaskPage() {
           </div>
 
           <div className="pt-4 flex justify-end gap-3 border-t border-gray-100">
-            <Link href="/developer/dashboard" className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition">
+            <Link href="/pm/tasks" className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition">
               Cancel
             </Link>
             <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">

@@ -37,7 +37,7 @@ export default async function DeveloperTaskPage({ params }: { params: { id: stri
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{task.title}</h1>
-                <p className="text-gray-500">{task.project.code} • {task.module}</p>
+                <p className="text-gray-500">{task.project.code} — {task.project.name} • {task.module}</p>
               </div>
               <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
                 {task.status.replace(/_/g, " ")}

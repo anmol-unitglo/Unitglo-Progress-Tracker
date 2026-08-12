@@ -13,7 +13,8 @@ import {
   recordRetest,
   cancelTask,
   reassignTask,
-  updateTaskPlanning
+  updateTaskPlanning,
+  createPMTask
 } from "@/services/taskService";
 
 async function requireRole(allowedRole: string) {
@@ -22,6 +23,26 @@ async function requireRole(allowedRole: string) {
     throw new Error("Unauthorized");
   }
   return session.user;
+}
+
+export async function actionCreatePMTask(formData: FormData) {
+  const user = await requireRole("PM");
+  
+  const data = {
+    projectId: formData.get("projectId"),
+    developerId: formData.get("developerId"),
+    module: formData.get("module"),
+    title: formData.get("title"),
+    description: formData.get("description"),
+    plannedStart: formData.get("plannedStart"),
+    deadline: formData.get("deadline"),
+    commitment: formData.get("commitment"),
+    commitmentUnit: formData.get("commitmentUnit"),
+    priority: formData.get("priority")
+  };
+
+  await createPMTask(parseInt(user.id), data);
+  revalidatePath("/pm/tasks");
 }
 
 export async function actionCreateTask(formData: FormData) {

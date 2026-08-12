@@ -42,11 +42,16 @@ export default async function PMTasksPage({
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/pm/dashboard" className="text-gray-500 hover:text-gray-800 flex items-center gap-2">
-          <ArrowLeft size={16} /> Dashboard
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/pm/dashboard" className="text-gray-500 hover:text-gray-800 flex items-center gap-2">
+            <ArrowLeft size={16} /> Dashboard
+          </Link>
+          <h1 className="text-3xl font-bold text-gray-900">All Tasks</h1>
+        </div>
+        <Link href="/pm/tasks/new" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition font-medium">
+          Create Task
         </Link>
-        <h1 className="text-3xl font-bold text-gray-900">All Tasks</h1>
       </div>
 
       <div className="bg-white p-4 rounded-xl shadow border border-gray-100">

@@ -24,12 +24,62 @@ async function logActivity(userId: number, action: string, entityType: string, e
 }
 
 // ------------------------------------------------------------------
+// PM ACTIONS
+// ------------------------------------------------------------------
+
+export async function createPMTask(pmId: number, data: any) {
+  const { projectId, developerId, module, title, description, plannedStart, deadline, commitment, commitmentUnit, priority } = data;
+
+  // Authorization: Must belong to the project as a PM
+  const membership = await prisma.projectMember.findUnique({
+    where: { projectId_userId: { projectId: parseInt(projectId), userId: pmId } }
+  });
+  if (!membership || membership.role !== "PM") throw new Error("Unauthorized to create tasks for this project");
+
+  // Authorization: Developer must belong to the project
+  const devMembership = await prisma.projectMember.findUnique({
+    where: { projectId_userId: { projectId: parseInt(projectId), userId: parseInt(developerId) } }
+  });
+  if (!devMembership || devMembership.role !== "DEVELOPER") throw new Error("Assigned user is not a developer on this project");
+
+  // Calculate Expected Delivery
+  const expectedDelivery = calculateExpectedDelivery(new Date(plannedStart), commitment, commitmentUnit);
+
+  const task = await prisma.task.create({
+    data: {
+      projectId: parseInt(projectId),
+      module,
+      title,
+      description,
+      priority: priority || Priority.MEDIUM,
+      assignedById: pmId, // Forced server-side
+      developerId: parseInt(developerId), 
+      plannedStart: new Date(plannedStart),
+      deadline: new Date(deadline),
+      commitment: parseFloat(commitment),
+      commitmentUnit: commitmentUnit || TimeUnit.HOURS,
+      expectedDelivery,
+      status: TaskStatus.NOT_STARTED,
+    },
+  });
+
+  await logActivity(pmId, 'TASK_CREATED_BY_PM', 'TASK', task.id, task.id, { title });
+  return task;
+}
+
+// ------------------------------------------------------------------
 // DEVELOPER ACTIONS
 // ------------------------------------------------------------------
 
 export async function createDeveloperTask(developerId: number, data: any) {
   // Ensure the developer only creates tasks for themselves
   const { projectId, module, title, description, assignedById, plannedStart, deadline, commitment, commitmentUnit, priority } = data;
+
+  // Authorization: Developer must belong to the selected project
+  const membership = await prisma.projectMember.findUnique({
+    where: { projectId_userId: { projectId: parseInt(projectId), userId: developerId } }
+  });
+  if (!membership || membership.role !== "DEVELOPER") throw new Error("Unauthorized: You are not a developer on this project");
 
   // Calculate Expected Delivery
   const expectedDelivery = calculateExpectedDelivery(new Date(plannedStart), commitment, commitmentUnit);
