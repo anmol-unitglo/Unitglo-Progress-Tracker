@@ -14,7 +14,7 @@ export default async function NewTaskPage() {
   // Fetch active projects where developer is a member
   const projects = await prisma.project.findMany({
     where: { 
-      status: "ACTIVE",
+      status: { in: ["ACTIVE", "PLANNING"] },
       members: {
         some: {
           userId: parseInt(session.user.id),
