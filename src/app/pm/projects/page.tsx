@@ -1,10 +1,10 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { PrismaClient } from "@prisma/client";
 import { getProjectPerformance } from "@/services/dashboardService";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus } from "lucide-react";
+import AlertHandler from "@/components/AlertHandler";
 
 export default async function PMProjectsPage() {
   const session = await getServerSession(authOptions);
@@ -14,6 +14,7 @@ export default async function PMProjectsPage() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-6">
+      <AlertHandler />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href="/pm/dashboard" className="text-gray-500 hover:text-gray-800 flex items-center gap-2">
@@ -56,7 +57,7 @@ export default async function PMProjectsPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 justify-end">
                       <div className="w-full bg-gray-200 rounded-full h-2 max-w-[4rem]">
-                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${proj.progress}%` }}></div>
+                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${proj.progress}%` }} />
                       </div>
                       <span className="text-xs text-gray-500">{proj.progress.toFixed(0)}%</span>
                     </div>
