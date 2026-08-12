@@ -14,13 +14,18 @@ export default async function PMNewTaskPage() {
   // Fetch active projects that the PM manages
   const projects = await prisma.project.findMany({
     where: { 
-      status: "ACTIVE",
-      members: {
-        some: {
-          userId: parseInt(session.user.id),
-          role: "PM"
+      status: { in: ["ACTIVE", "PLANNING"] },
+      OR: [
+        { createdById: parseInt(session.user.id) },
+        {
+          members: {
+            some: {
+              userId: parseInt(session.user.id),
+              role: "PM"
+            }
+          }
         }
-      }
+      ]
     }
   });
 
