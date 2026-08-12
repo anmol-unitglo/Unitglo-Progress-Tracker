@@ -2,8 +2,10 @@
 import { useState } from "react";
 import { actionUpdateUser, actionResetPassword, actionToggleUserStatus } from "@/app/actions/userActions";
 import { Lock, Power, PowerOff, Edit2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function UserActionsMenu({ user }: { user: any }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   async function handleResetPassword() {
@@ -25,7 +27,10 @@ export default function UserActionsMenu({ user }: { user: any }) {
     formData.append("isActive", (!user.isActive).toString());
     const res = await actionToggleUserStatus(null, formData);
     if (res?.error) alert(res.error);
-    else alert(res?.message);
+    else {
+      alert(res?.message);
+      router.refresh();
+    }
     setLoading(false);
   }
 
@@ -45,7 +50,10 @@ export default function UserActionsMenu({ user }: { user: any }) {
     formData.append("role", newRole);
     const res = await actionUpdateUser(null, formData);
     if (res?.error) alert(res.error);
-    else alert(res?.message);
+    else {
+      alert(res?.message);
+      router.refresh();
+    }
     setLoading(false);
   }
 

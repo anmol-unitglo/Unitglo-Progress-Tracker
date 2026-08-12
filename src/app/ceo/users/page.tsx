@@ -102,7 +102,13 @@ export default async function CEOUsersPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <UserActionsMenu user={u} />
+                        <UserActionsMenu user={{
+                          id: u.id,
+                          name: u.name,
+                          email: u.email,
+                          role: u.role,
+                          isActive: u.isActive
+                        }} />
                       </td>
                     </tr>
                   ))}
