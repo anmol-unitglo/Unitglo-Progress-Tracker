@@ -12,21 +12,23 @@ const prisma = new PrismaClient();
 export default async function PMTasksPage({
   searchParams
 }: {
-  searchParams: { project?: string, dev?: string, status?: string, q?: string }
+  searchParams: Promise<{ project?: string, dev?: string, status?: string, q?: string }>
 }) {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "PM") redirect("/login");
 
+  const resolvedSearchParams = await searchParams;
+
   const whereClause: any = {};
-  if (searchParams.project) whereClause.projectId = parseInt(searchParams.project);
-  if (searchParams.dev) whereClause.developerId = parseInt(searchParams.dev);
-  if (searchParams.status) whereClause.status = searchParams.status;
-  if (searchParams.q) {
+  if (resolvedSearchParams.project) whereClause.projectId = parseInt(resolvedSearchParams.project);
+  if (resolvedSearchParams.dev) whereClause.developerId = parseInt(resolvedSearchParams.dev);
+  if (resolvedSearchParams.status) whereClause.status = resolvedSearchParams.status;
+  if (resolvedSearchParams.q) {
     whereClause.OR = [
-      { title: { contains: searchParams.q } },
-      { description: { contains: searchParams.q } },
+      { title: { contains: resolvedSearchParams.q } },
+      { description: { contains: resolvedSearchParams.q } },
       // if q is a number, search by ID
-      ...(isNaN(parseInt(searchParams.q)) ? [] : [{ id: parseInt(searchParams.q) }])
+      ...(isNaN(parseInt(resolvedSearchParams.q)) ? [] : [{ id: parseInt(resolvedSearchParams.q) }])
     ];
   }
 
@@ -60,13 +62,13 @@ export default async function PMTasksPage({
             <label className="block text-xs font-medium text-gray-500 mb-1">Search</label>
             <div className="relative">
               <Search size={16} className="absolute left-3 top-2.5 text-gray-400" />
-              <input type="text" name="q" defaultValue={searchParams.q || ""} className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm" placeholder="Task ID, Title..." />
+              <input type="text" name="q" defaultValue={resolvedSearchParams.q || ""} className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm" placeholder="Task ID, Title..." />
             </div>
           </div>
           
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Project</label>
-            <select name="project" defaultValue={searchParams.project || ""} className="border border-gray-300 rounded-md px-3 py-2 text-sm">
+            <select name="project" defaultValue={resolvedSearchParams.project || ""} className="border border-gray-300 rounded-md px-3 py-2 text-sm">
               <option value="">All Projects</option>
               {projects.map(p => <option key={p.id} value={p.id}>{p.code}</option>)}
             </select>
@@ -74,7 +76,7 @@ export default async function PMTasksPage({
 
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Developer</label>
-            <select name="dev" defaultValue={searchParams.dev || ""} className="border border-gray-300 rounded-md px-3 py-2 text-sm">
+            <select name="dev" defaultValue={resolvedSearchParams.dev || ""} className="border border-gray-300 rounded-md px-3 py-2 text-sm">
               <option value="">All Developers</option>
               {developers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
@@ -82,7 +84,7 @@ export default async function PMTasksPage({
 
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
-            <select name="status" defaultValue={searchParams.status || ""} className="border border-gray-300 rounded-md px-3 py-2 text-sm">
+            <select name="status" defaultValue={resolvedSearchParams.status || ""} className="border border-gray-300 rounded-md px-3 py-2 text-sm">
               <option value="">All Statuses</option>
               {Object.values(TaskStatus).map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
             </select>
@@ -92,7 +94,7 @@ export default async function PMTasksPage({
             <Filter size={16} /> Filter
           </button>
           
-          {(searchParams.project || searchParams.dev || searchParams.status || searchParams.q) && (
+          {(resolvedSearchParams.project || resolvedSearchParams.dev || resolvedSearchParams.status || resolvedSearchParams.q) && (
             <Link href="/pm/tasks" className="text-red-500 hover:text-red-700 text-sm font-medium px-2">
               Clear
             </Link>

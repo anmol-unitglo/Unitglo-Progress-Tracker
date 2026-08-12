@@ -8,21 +8,23 @@ import { ArrowLeft, Filter, Calendar } from "lucide-react";
 export default async function PMProductivityPage({
   searchParams
 }: {
-  searchParams: { start?: string, end?: string }
+  searchParams: Promise<{ start?: string, end?: string }>
 }) {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "PM") redirect("/login");
 
+  const resolvedSearchParams = await searchParams;
+
   let startDate: Date | undefined = undefined;
   let endDate: Date | undefined = undefined;
   
-  if (searchParams.start) {
-    startDate = new Date(searchParams.start);
+  if (resolvedSearchParams.start) {
+    startDate = new Date(resolvedSearchParams.start);
     startDate.setHours(0, 0, 0, 0);
   }
   
-  if (searchParams.end) {
-    endDate = new Date(searchParams.end);
+  if (resolvedSearchParams.end) {
+    endDate = new Date(resolvedSearchParams.end);
     endDate.setHours(23, 59, 59, 999);
   }
 
@@ -43,16 +45,16 @@ export default async function PMProductivityPage({
         <form className="flex gap-4 items-center">
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500">From</span>
-            <input type="date" name="start" defaultValue={searchParams.start || ""} className="border border-gray-300 rounded px-2 py-1 text-sm" />
+            <input type="date" name="start" defaultValue={resolvedSearchParams.start || ""} className="border border-gray-300 rounded px-2 py-1 text-sm" />
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500">To</span>
-            <input type="date" name="end" defaultValue={searchParams.end || ""} className="border border-gray-300 rounded px-2 py-1 text-sm" />
+            <input type="date" name="end" defaultValue={resolvedSearchParams.end || ""} className="border border-gray-300 rounded px-2 py-1 text-sm" />
           </div>
           <button type="submit" className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-1 rounded text-sm transition">
             Apply Filter
           </button>
-          {(searchParams.start || searchParams.end) && (
+          {(resolvedSearchParams.start || resolvedSearchParams.end) && (
             <Link href="/pm/productivity" className="text-red-500 hover:text-red-700 text-sm">
               Clear
             </Link>

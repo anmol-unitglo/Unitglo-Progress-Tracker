@@ -5,14 +5,16 @@ import { actionStartTesting, actionPassTesting, actionFailTesting, actionRetest 
 import { formatInIST } from "@/utils/date";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle, XCircle, Bug, Activity, FileText } from "lucide-react";
+import { redirect } from "next/navigation";
 
 const prisma = new PrismaClient();
 
-export default async function TesterTaskPage({ params }: { params: { id: string } }) {
+export default async function TesterTaskPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "TESTER") return null;
+  if (!session || session.user.role !== "TESTER") redirect("/login");
 
-  const taskId = parseInt(params.id);
+  const { id } = await params;
+  const taskId = parseInt(id);
   const task = await prisma.task.findUnique({
     where: { id: taskId },
     include: { 

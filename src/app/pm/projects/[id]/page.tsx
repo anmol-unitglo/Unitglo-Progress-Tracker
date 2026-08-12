@@ -9,11 +9,12 @@ import { format } from "date-fns";
 
 const prisma = new PrismaClient();
 
-export default async function PMProjectDetailPage({ params }: { params: { id: string } }) {
+export default async function PMProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "PM") redirect("/login");
 
-  const projectId = parseInt(params.id);
+  const { id } = await params;
+  const projectId = parseInt(id);
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     include: {

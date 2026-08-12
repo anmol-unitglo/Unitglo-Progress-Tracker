@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "email": "admin@example.com",
+    "password": "$2b$10$RFVr3hSh7R7R6TAxamKp/uVH3HLRCDGsKmIUdO1Gha55gNF1Ia1JK",
+    "role": "CEO"
+  },
+  {
+    "id": 2,
+    "email": "testdev1@test.com",
+    "password": "$2b$10$FzFjEaakW6zz8mhb6s9FFeCaoC12R5wfxdmvFPsHgb.ZZkzwoBNtC",
+    "role": "DEVELOPER"
+  },
+  {
+    "id": 3,
+    "email": "pm@test.com",
+    "password": "$2b$10$EkvmNIe8XPcVNODY/Hediu0Jkw4xyFG9KQVrYymRtVHVh9cRMKd56",
+    "role": "PM"
+  },
+  {
+    "id": 4,
+    "email": "tester1@tets.com",
+    "password": "$2b$10$ncMbdtckMNZL1pkXMxqkhu8MA/jQ6IES16jnyd3kf27wBFNy4Lrui",
+    "role": "TESTER"
+  }
+]

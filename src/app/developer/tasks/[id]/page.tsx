@@ -3,16 +3,18 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { PrismaClient, TaskStatus } from "@prisma/client";
 import { actionUpdateTask, actionSubmitForTesting } from "@/app/actions/taskActions";
 import { formatInIST } from "@/utils/date";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Clock, Activity, CheckCircle } from "lucide-react";
 
 const prisma = new PrismaClient();
 
-export default async function DeveloperTaskPage({ params }: { params: { id: string } }) {
+export default async function DeveloperTaskPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "DEVELOPER") return null;
+  if (!session || session.user.role !== "DEVELOPER") redirect("/login");
 
-  const taskId = parseInt(params.id);
+  const { id } = await params;
+  const taskId = parseInt(id);
   const task = await prisma.task.findUnique({
     where: { id: taskId, developerId: parseInt(session.user.id) },
     include: { 

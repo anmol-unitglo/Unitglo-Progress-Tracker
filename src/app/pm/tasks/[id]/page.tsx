@@ -9,11 +9,12 @@ import PMTaskActionsMenu from "./PMTaskActionsMenu";
 
 const prisma = new PrismaClient();
 
-export default async function PMTaskDetailPage({ params }: { params: { id: string } }) {
+export default async function PMTaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "PM") redirect("/login");
 
-  const taskId = parseInt(params.id);
+  const { id } = await params;
+  const taskId = parseInt(id);
   const task = await prisma.task.findUnique({
     where: { id: taskId },
     include: { 
