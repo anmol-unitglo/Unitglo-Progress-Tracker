@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { Shield, Users, Mail, Clock } from "lucide-react";
 import CreateUserForm from "./CreateUserForm";
+import UserActionsMenu from "./UserActionsMenu";
 
 const prisma = new PrismaClient();
 
@@ -20,6 +21,7 @@ export default async function CEOUsersPage() {
       name: true,
       email: true,
       role: true,
+      isActive: true,
       createdAt: true,
     },
     orderBy: {
@@ -62,7 +64,9 @@ export default async function CEOUsersPage() {
                   <tr>
                     <th className="px-6 py-3">Name</th>
                     <th className="px-6 py-3">Role</th>
+                    <th className="px-6 py-3">Status</th>
                     <th className="px-6 py-3 text-right">Created</th>
+                    <th className="px-6 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -84,11 +88,21 @@ export default async function CEOUsersPage() {
                           {u.role}
                         </span>
                       </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2.5 py-1 rounded text-xs font-semibold ${
+                          u.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {u.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
                       <td className="px-6 py-4 text-right text-gray-500 whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
                           <Clock size={12}/>
                           {new Date(u.createdAt).toLocaleDateString()}
                         </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <UserActionsMenu user={u} />
                       </td>
                     </tr>
                   ))}

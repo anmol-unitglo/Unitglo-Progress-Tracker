@@ -10,7 +10,10 @@ import {
   startTaskTesting,
   passTaskTesting,
   failTaskTestingAndCreateDefect,
-  recordRetest
+  recordRetest,
+  cancelTask,
+  reassignTask,
+  updateTaskPlanning
 } from "@/services/taskService";
 
 async function requireRole(allowedRole: string) {
@@ -101,4 +104,47 @@ export async function actionRetest(taskId: number, formData: FormData) {
   await recordRetest(parseInt(user.id), taskId, result, remarks);
   revalidatePath("/tester/dashboard");
   revalidatePath(`/tester/tasks/${taskId}`);
+}
+
+// ------------------------------------------------------------------
+// PM ACTIONS (V1.1 Admin Features)
+// ------------------------------------------------------------------
+
+export async function actionCancelTask(taskId: number) {
+  const user = await requireRole("PM");
+  await cancelTask(parseInt(user.id), taskId);
+  revalidatePath("/pm/dashboard");
+  revalidatePath(`/pm/tasks/${taskId}`);
+}
+
+export async function actionReassignTask(taskId: number, formData: FormData) {
+  const user = await requireRole("PM");
+  const role = formData.get("role") as 'DEVELOPER' | 'TESTER';
+  const newUserId = parseInt(formData.get("newUserId") as string);
+  
+  if (!role || !newUserId) {
+    throw new Error("Role and newUserId are required.");
+  }
+  
+  await reassignTask(parseInt(user.id), taskId, role, newUserId);
+  revalidatePath("/pm/dashboard");
+  revalidatePath(`/pm/tasks/${taskId}`);
+}
+
+export async function actionUpdateTaskPlanning(taskId: number, formData: FormData) {
+  const user = await requireRole("PM");
+  
+  const data = {
+    title: formData.get("title") || undefined,
+    description: formData.get("description"),
+    priority: formData.get("priority") || undefined,
+    commitment: formData.get("commitment") || undefined,
+    commitmentUnit: formData.get("commitmentUnit") || undefined,
+    developerId: formData.get("developerId") || undefined,
+    testerId: formData.get("testerId") || undefined,
+  };
+
+  await updateTaskPlanning(parseInt(user.id), taskId, data);
+  revalidatePath("/pm/dashboard");
+  revalidatePath(`/pm/tasks/${taskId}`);
 }

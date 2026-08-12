@@ -5,6 +5,7 @@ import { calculateOverdue, formatInIST } from "@/utils/date";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Clock, Activity, Bug } from "lucide-react";
+import PMTaskActionsMenu from "./PMTaskActionsMenu";
 
 const prisma = new PrismaClient();
 
@@ -42,9 +43,12 @@ export default async function PMTaskDetailPage({ params }: { params: { id: strin
                 <h1 className="text-2xl font-bold text-gray-900">#{task.id} - {task.title}</h1>
                 <p className="text-gray-500">{task.project.code} • Dev: {task.developer.name} • Tester: {task.tester?.name || "Unassigned"}</p>
               </div>
-              <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
-                {task.status.replace(/_/g, " ")}
-              </span>
+              <div className="flex items-center gap-3">
+                <PMTaskActionsMenu task={task} />
+                <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
+                  {task.status.replace(/_/g, " ")}
+                </span>
+              </div>
             </div>
             
             <div className="prose max-w-none text-gray-700 mb-6">

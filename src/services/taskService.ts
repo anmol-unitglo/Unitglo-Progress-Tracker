@@ -274,3 +274,121 @@ export async function recordRetest(testerId: number, taskId: number, result: Tes
 
   await logActivity(testerId, `RETEST_${result}`, 'TASK', taskId, taskId);
 }
+
+// ------------------------------------------------------------------
+// PM ACTIONS (V1.1 Admin Features)
+// ------------------------------------------------------------------
+
+async function verifyPMAuthorization(pmId: number, projectId: number) {
+  const membership = await prisma.projectMember.findUnique({
+    where: { projectId_userId: { projectId, userId: pmId } }
+  });
+  if (!membership || membership.role !== "PM") {
+    throw new Error("Forbidden. You are not an authorized PM for this project.");
+  }
+}
+
+export async function cancelTask(pmId: number, taskId: number) {
+  const task = await prisma.task.findUnique({ where: { id: taskId } });
+  if (!task) throw new Error('Task not found');
+  await verifyPMAuthorization(pmId, task.projectId);
+
+  if (task.status !== TaskStatus.NOT_STARTED && task.status !== TaskStatus.BLOCKED) {
+    throw new Error('Task can only be cancelled if it is NOT_STARTED or BLOCKED.');
+  }
+
+  const updatedTask = await prisma.task.update({
+    where: { id: taskId },
+    data: { status: TaskStatus.CANCELLED }
+  });
+
+  await logActivity(pmId, 'TASK_CANCELLED', 'TASK', taskId, taskId, { previousStatus: task.status });
+  return updatedTask;
+}
+
+export async function reassignTask(pmId: number, taskId: number, role: 'DEVELOPER' | 'TESTER', newUserId: number) {
+  const task = await prisma.task.findUnique({ where: { id: taskId } });
+  if (!task) throw new Error('Task not found');
+  await verifyPMAuthorization(pmId, task.projectId);
+
+  const newUser = await prisma.user.findUnique({ where: { id: newUserId } });
+  if (!newUser || newUser.role !== role || !newUser.isActive) {
+    throw new Error(`Invalid user or incorrect role for reassignment.`);
+  }
+
+  const projectMember = await prisma.projectMember.findUnique({
+    where: { projectId_userId: { projectId: task.projectId, userId: newUserId } }
+  });
+  if (!projectMember) {
+    throw new Error('User is not a member of this project.');
+  }
+
+  let updateData: any = {};
+  let previousId: number | null = null;
+
+  if (role === 'DEVELOPER') {
+    if (task.status !== TaskStatus.NOT_STARTED && task.status !== TaskStatus.BLOCKED) {
+      throw new Error('Developer reassignment allowed only when NOT_STARTED or BLOCKED.');
+    }
+    previousId = task.developerId;
+    updateData = { developerId: newUserId };
+  } else if (role === 'TESTER') {
+    if (task.status !== TaskStatus.NOT_STARTED && task.status !== TaskStatus.BLOCKED && task.status !== TaskStatus.READY_FOR_TESTING) {
+      throw new Error('Tester reassignment allowed only when NOT_STARTED, BLOCKED, or READY_FOR_TESTING.');
+    }
+    previousId = task.testerId;
+    updateData = { testerId: newUserId };
+  }
+
+  const updatedTask = await prisma.task.update({
+    where: { id: taskId },
+    data: updateData
+  });
+
+  await logActivity(pmId, 'TASK_REASSIGNED', 'TASK', taskId, taskId, {
+    role,
+    previousUserId: previousId,
+    newUserId: newUserId,
+    pmId
+  });
+
+  return updatedTask;
+}
+
+export async function updateTaskPlanning(pmId: number, taskId: number, data: any) {
+  const task = await prisma.task.findUnique({ where: { id: taskId } });
+  if (!task) throw new Error('Task not found');
+  await verifyPMAuthorization(pmId, task.projectId);
+
+  if (task.actualStart) {
+    throw new Error('Cannot edit planning fields after actual work has started.');
+  }
+
+  const { title, description, priority, commitment, commitmentUnit, developerId, testerId } = data;
+
+  if (developerId) {
+    const dev = await prisma.projectMember.findFirst({ where: { projectId: task.projectId, userId: parseInt(developerId), role: 'DEVELOPER' } });
+    if (!dev) throw new Error('Invalid developer assignment.');
+  }
+  
+  if (testerId) {
+    const tester = await prisma.projectMember.findFirst({ where: { projectId: task.projectId, userId: parseInt(testerId), role: 'TESTER' } });
+    if (!tester) throw new Error('Invalid tester assignment.');
+  }
+
+  const updatedTask = await prisma.task.update({
+    where: { id: taskId },
+    data: {
+      title: title || task.title,
+      description: description !== undefined ? description : task.description,
+      priority: priority || task.priority,
+      commitment: commitment ? parseFloat(commitment) : task.commitment,
+      commitmentUnit: commitmentUnit || task.commitmentUnit,
+      developerId: developerId ? parseInt(developerId) : task.developerId,
+      testerId: testerId ? parseInt(testerId) : task.testerId,
+    }
+  });
+
+  await logActivity(pmId, 'TASK_PLANNING_UPDATED', 'TASK', taskId, taskId, { pmId });
+  return updatedTask;
+}
