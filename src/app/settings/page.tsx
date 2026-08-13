@@ -1,11 +1,33 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState, useRef } from "react";
 import { actionChangePassword } from "../actions/userActions";
 import { Lock } from "lucide-react";
+import Swal from "sweetalert2";
 
 export default function SettingsPage() {
-  const [state, formAction, pending] = useActionState(actionChangePassword, null);
+  const [pending, setPending] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setPending(true);
+    
+    const formData = new FormData(e.currentTarget);
+    try {
+      const res = await actionChangePassword(null, formData);
+      if (res?.error) {
+        Swal.fire("Error", res.error, "error");
+      } else if (res?.success) {
+        Swal.fire("Success", res.message, "success");
+        formRef.current?.reset();
+      }
+    } catch (err) {
+      Swal.fire("Error", "An unexpected error occurred", "error");
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
     <div className="p-8 max-w-2xl mx-auto space-y-8">
@@ -18,20 +40,8 @@ export default function SettingsPage() {
 
       <div className="bg-white p-6 rounded-xl shadow border border-gray-100">
         <h2 className="text-xl font-semibold mb-6">Change Password</h2>
-        
-        {state?.error && (
-          <div className="bg-red-50 text-red-700 p-4 rounded-md mb-6 border border-red-100">
-            {state.error}
-          </div>
-        )}
 
-        {state?.success && (
-          <div className="bg-green-50 text-green-700 p-4 rounded-md mb-6 border border-green-100">
-            {state.message}
-          </div>
-        )}
-
-        <form action={formAction} className="space-y-4">
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Current Password

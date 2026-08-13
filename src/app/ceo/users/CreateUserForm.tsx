@@ -4,18 +4,15 @@ import { useState } from "react";
 import { actionCreateUser } from "@/app/actions/userActions";
 import { UserPlus, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
 
 export default function CreateUserForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    setError(null);
-    setSuccess(null);
 
     const formData = new FormData(e.currentTarget);
     
@@ -23,14 +20,29 @@ export default function CreateUserForm() {
       const result = await actionCreateUser(null, formData);
       
       if (result.error) {
-        setError(result.error);
+        Swal.fire({
+          icon: "error",
+          title: result.error,
+          timer: 3000,
+          showConfirmButton: false,
+        });
       } else if (result.success) {
-        setSuccess(result.message || "User created successfully");
+        Swal.fire({
+          icon: "success",
+          title: result.message || "User created successfully",
+          timer: 3000,
+          showConfirmButton: false,
+        });
         (e.target as HTMLFormElement).reset();
         router.refresh();
       }
     } catch (err) {
-      setError("An unexpected error occurred");
+      Swal.fire({
+        icon: "error",
+        title: "An unexpected error occurred",
+        timer: 3000,
+        showConfirmButton: false,
+      });
     } finally {
       setLoading(false);
     }
@@ -45,18 +57,6 @@ export default function CreateUserForm() {
       </div>
       
       <div className="p-6">
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-100">
-            {error}
-          </div>
-        )}
-        
-        {success && (
-          <div className="mb-4 p-3 bg-green-50 text-green-700 text-sm rounded-lg border border-green-100">
-            {success}
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
