@@ -1,4 +1,18 @@
+"use server";
+
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { createProject, updateProject, assignProjectMembers, removeProjectMember } from "@/services/projectService";
+
+async function requireRole(allowedRole: string) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== allowedRole) {
+    throw new Error("Unauthorized");
+  }
+  return session.user;
+}
 
 export async function actionCreateProject(formData: FormData) {
   try {
