@@ -3,7 +3,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]/route";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, isRedirectError } from "next/navigation";
 import {
   createDeveloperTask,
   updateDeveloperTaskProgress,
@@ -46,7 +46,7 @@ export async function actionCreatePMTask(formData: FormData) {
     await createPMTask(parseInt(user.id), data);
     revalidatePath("/pm/tasks");
     redirect("/pm/tasks?alert=success&msg=Task+created+successfully");
-  } catch (error: any) {
+  } catch (error: any) { if (isRedirectError(error: any)) throw error: any;
     redirect(`/pm/tasks?alert=error&msg=${encodeURIComponent(error.message || 'Failed to create task')}`);
   }
 }
@@ -71,7 +71,7 @@ export async function actionCreateTask(formData: FormData) {
     await createDeveloperTask(parseInt(user.id), data);
     revalidatePath("/developer/dashboard");
     redirect("/developer/dashboard?alert=success&msg=Task+created+successfully");
-  } catch (error: any) {
+  } catch (error: any) { if (isRedirectError(error: any)) throw error: any;
     redirect(`/developer/dashboard?alert=error&msg=${encodeURIComponent(error.message || 'Failed to create task')}`);
   }
 }
@@ -92,7 +92,7 @@ export async function actionUpdateTask(taskId: number, formData: FormData) {
     revalidatePath("/developer/dashboard");
     revalidatePath(`/developer/tasks/${taskId}`);
     redirect(`/developer/tasks/${taskId}?alert=success&msg=Task+updated+successfully`);
-  } catch (error: any) {
+  } catch (error: any) { if (isRedirectError(error: any)) throw error: any;
     redirect(`/developer/tasks/${taskId}?alert=error&msg=${encodeURIComponent(error.message || 'Failed to update task')}`);
   }
 }
@@ -104,7 +104,7 @@ export async function actionSubmitForTesting(taskId: number) {
     revalidatePath("/developer/dashboard");
     revalidatePath(`/developer/tasks/${taskId}`);
     redirect(`/developer/tasks/${taskId}?alert=success&msg=Task+submitted+for+testing`);
-  } catch (error: any) {
+  } catch (error: any) { if (isRedirectError(error: any)) throw error: any;
     redirect(`/developer/tasks/${taskId}?alert=error&msg=${encodeURIComponent(error.message || 'Failed to submit task')}`);
   }
 }
@@ -116,7 +116,7 @@ export async function actionStartTesting(taskId: number) {
     revalidatePath("/tester/dashboard");
     revalidatePath(`/tester/tasks/${taskId}`);
     redirect(`/tester/tasks/${taskId}?alert=success&msg=Testing+started`);
-  } catch (error: any) {
+  } catch (error: any) { if (isRedirectError(error: any)) throw error: any;
     redirect(`/tester/tasks/${taskId}?alert=error&msg=${encodeURIComponent(error.message || 'Failed to start testing')}`);
   }
 }
@@ -129,7 +129,7 @@ export async function actionPassTesting(taskId: number, formData: FormData) {
     revalidatePath("/tester/dashboard");
     revalidatePath(`/tester/tasks/${taskId}`);
     redirect(`/tester/tasks/${taskId}?alert=success&msg=Task+passed+testing`);
-  } catch (error: any) {
+  } catch (error: any) { if (isRedirectError(error: any)) throw error: any;
     redirect(`/tester/tasks/${taskId}?alert=error&msg=${encodeURIComponent(error.message || 'Failed to pass task')}`);
   }
 }
@@ -148,7 +148,7 @@ export async function actionFailTesting(taskId: number, formData: FormData) {
     revalidatePath("/tester/dashboard");
     revalidatePath(`/tester/tasks/${taskId}`);
     redirect(`/tester/tasks/${taskId}?alert=success&msg=Task+failed+testing+and+defect+logged`);
-  } catch (error: any) {
+  } catch (error: any) { if (isRedirectError(error: any)) throw error: any;
     redirect(`/tester/tasks/${taskId}?alert=error&msg=${encodeURIComponent(error.message || 'Failed to log defect')}`);
   }
 }
@@ -163,7 +163,7 @@ export async function actionRetest(taskId: number, formData: FormData) {
     revalidatePath("/tester/dashboard");
     revalidatePath(`/tester/tasks/${taskId}`);
     redirect(`/tester/tasks/${taskId}?alert=success&msg=Retest+recorded+successfully`);
-  } catch (error: any) {
+  } catch (error: any) { if (isRedirectError(error: any)) throw error: any;
     redirect(`/tester/tasks/${taskId}?alert=error&msg=${encodeURIComponent(error.message || 'Failed to record retest')}`);
   }
 }
@@ -179,7 +179,7 @@ export async function actionCancelTask(taskId: number) {
     revalidatePath("/pm/dashboard");
     revalidatePath(`/pm/tasks/${taskId}`);
     redirect(`/pm/tasks/${taskId}?alert=success&msg=Task+cancelled+successfully`);
-  } catch (error: any) {
+  } catch (error: any) { if (isRedirectError(error: any)) throw error: any;
     redirect(`/pm/tasks/${taskId}?alert=error&msg=${encodeURIComponent(error.message || 'Failed to cancel task')}`);
   }
 }
@@ -198,7 +198,7 @@ export async function actionReassignTask(taskId: number, formData: FormData) {
     revalidatePath("/pm/dashboard");
     revalidatePath(`/pm/tasks/${taskId}`);
     redirect(`/pm/tasks/${taskId}?alert=success&msg=Task+reassigned+successfully`);
-  } catch (error: any) {
+  } catch (error: any) { if (isRedirectError(error: any)) throw error: any;
     redirect(`/pm/tasks/${taskId}?alert=error&msg=${encodeURIComponent(error.message || 'Failed to reassign task')}`);
   }
 }
@@ -221,7 +221,7 @@ export async function actionUpdateTaskPlanning(taskId: number, formData: FormDat
     revalidatePath("/pm/dashboard");
     revalidatePath(`/pm/tasks/${taskId}`);
     redirect(`/pm/tasks/${taskId}?alert=success&msg=Task+planning+updated`);
-  } catch (error: any) {
+  } catch (error: any) { if (isRedirectError(error: any)) throw error: any;
     redirect(`/pm/tasks/${taskId}?alert=error&msg=${encodeURIComponent(error.message || 'Failed to update planning')}`);
   }
 }

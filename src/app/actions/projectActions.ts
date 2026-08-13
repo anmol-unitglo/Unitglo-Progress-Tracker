@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { redirect, isRedirectError } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
@@ -29,7 +29,7 @@ export async function actionCreateProject(formData: FormData) {
     revalidatePath("/pm/dashboard");
     revalidatePath("/pm/projects");
     redirect("/pm/projects?alert=success&msg=Project%20created%20successfully");
-  } catch (e) {
+  } catch (e) { if (isRedirectError(e)) throw e;
     console.error(e);
     redirect("/pm/projects?alert=error&msg=Failed%20to%20create%20project");
   }
@@ -50,7 +50,7 @@ export async function actionUpdateProject(projectId: number, formData: FormData)
     revalidatePath("/pm/dashboard");
     revalidatePath(`/pm/projects/${projectId}`);
     redirect(`/pm/projects/${projectId}?alert=success&msg=Project%20updated%20successfully`);
-  } catch (e) {
+  } catch (e) { if (isRedirectError(e)) throw e;
     console.error(e);
     redirect(`/pm/projects/${projectId}?alert=error&msg=Failed%20to%20update%20project`);
   }
@@ -66,7 +66,7 @@ export async function actionAssignMembers(projectId: number, formData: FormData)
     }
     revalidatePath(`/pm/projects/${projectId}`);
     redirect(`/pm/projects/${projectId}?alert=success&msg=Members%20assigned%20successfully`);
-  } catch (e) {
+  } catch (e) { if (isRedirectError(e)) throw e;
     console.error(e);
     redirect(`/pm/projects/${projectId}?alert=error&msg=Failed%20to%20assign%20members`);
   }
@@ -78,7 +78,7 @@ export async function actionRemoveMember(projectId: number, memberUserId: number
     await removeProjectMember(parseInt(user.id), projectId, memberUserId);
     revalidatePath(`/pm/projects/${projectId}`);
     redirect(`/pm/projects/${projectId}?alert=success&msg=Member%20removed%20successfully`);
-  } catch (e) {
+  } catch (e) { if (isRedirectError(e)) throw e;
     console.error(e);
     redirect(`/pm/projects/${projectId}?alert=error&msg=Failed%20to%20remove%20member`);
   }
